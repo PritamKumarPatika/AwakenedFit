@@ -1,21 +1,40 @@
-from flask import Flask, jsonify
+from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
-import os
 from pymongo import MongoClient
+import os
+from routes.progress_routes import progress_bp
+# Register routes
+from routes.auth_routes import auth_bp
 
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+
+
+# Load env
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-client = MongoClient(os.getenv("MONGO_URI"))
-db = client["awakenedfit"]
-users = db["users"]
+app.register_blueprint(progress_bp)
 
-@app.route('/api/message')
-def message():
-    return jsonify({"message": "AwakenedFit Backend Ready!"})
+# MongoDB setup
+mongo = MongoClient(os.getenv("MONGO_URI"))
+db = mongo["awakenedfit"]
+
+# Attach DB to app context
+app.config["DB"] = db
+
+
+app.register_blueprint(auth_bp, url_prefix="/api/auth")
+
+@app.route('/')
+def index():
+    return {"status": "AwakenedFit backend running"}
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
